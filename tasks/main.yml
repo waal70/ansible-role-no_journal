@@ -25,7 +25,7 @@
 
 ## Begin block GRUB change
 - name: Block for grub config changes
-  when: grubfile.stat.isreg is defined
+  when: (grubfile.stat.isreg is defined) and (not enable_journaling | bool)
   block:
     - name: Modify GRUB Configuration if rootflags not set
       ansible.builtin.command: grep -q 'GRUB_CMDLINE_LINUX=".*rootflags=noatime,nodiratime.*"' /etc/default/grub
@@ -59,8 +59,25 @@
     echo b > /proc/sysrq-trigger &
   args:
     executable: /bin/bash
-  when: fs_features is search("has_journal")
+  when: (fs_features is search("has_journal")) and (not enable_journaling | bool)
   changed_when: false
+
+- name: Re-enable journaling if the variable tells us so
+  ansible.builtin.command:
+    cmd: tune2fs -O has_journal {{ root_partition }}
+  when: (not (fs_features is search("has_journal"))) and (enable_journaling | bool)
+  changed_when: (not (fs_features is search("has_journal"))) and (enable_journaling | bool)
+
+## Begin block GRUB change
+- name: Block for grub config changes to undo has_journal removal
+  when: (grubfile.stat.isreg is defined) and (enable_journaling | bool)
+  block:
+    - name: Modify GRUB Configuration because noatime,nodiratime not set
+      ansible.builtin.replace:
+        path: /etc/default/grub
+        regexp: "(rootflags=noatime,nodiratime)"
+        replace: ""
+## End block GRUB change
 
 - name: Wait for system to become reachable
   ansible.builtin.wait_for_connection:
