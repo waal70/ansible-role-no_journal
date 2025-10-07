@@ -45,10 +45,6 @@
   ansible.builtin.set_fact:
     fs_features: "{{ results.stdout_lines }}"
 
-- name: Print filesystem-check results
-  ansible.builtin.debug:
-    var: fs_features
-
 - name: Execute sequence of commands to emergency sync, remount ro, clear has_journal and reboot
   ansible.builtin.raw: >
     echo u > /proc/sysrq-trigger &&
