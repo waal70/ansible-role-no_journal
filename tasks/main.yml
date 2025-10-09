@@ -51,8 +51,8 @@
     echo s > /proc/sysrq-trigger &&
     sleep 2 && tune2fs -O ^has_journal {{ root_partition }} &&
     sleep 2 && e2fsck -fy {{ root_partition }} &&
-    sleep 5 && echo s > /proc/sysrq-trigger &&
-    echo b > /proc/sysrq-trigger &
+    sleep 30 && echo s > /proc/sysrq-trigger &&
+    sleep 10 && echo b > /proc/sysrq-trigger &
   args:
     executable: /bin/bash
   when: (fs_features is search("has_journal")) and (not enable_journaling | bool)
